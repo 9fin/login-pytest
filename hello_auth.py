@@ -2,6 +2,7 @@ from flask import Flask, render_template, redirect, url_for, request
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user
 from jinja2 import Template
 import bcrypt
+from itsdangerous import TimedJSONWebSignatureSerializer as Serializer, BadData
 
 login_manager = LoginManager()
 login_manager.login_view = 'login'
@@ -20,18 +21,25 @@ def create_app(testing=False, debug=False, auth_disabled=True):
     return app
 
 
-app = create_app()
+app = create_app(auth_disabled=False)
 
 
 class User(UserMixin):
-    def __init__(self, name, id, active=True, passhash=None):
+    def __init__(self, name, id, active=True, passhash=None, token_expires_in=300):
         self.id = id
         self.name = name
         self.active = active
         self.passhash = passhash
+        self.token_expires_in = token_expires_in
 
     def get_id(self):
-        return self.id
+        '''
+        returns a Unicode TimedJSONWebSignature token to be used as the "user_id" for the session token.
+        token should contain hash of name. Token expires after 5mins by default if not provided
+        '''
+        s = Serializer(app.config['SECRET_KEY'], expires_in=self.token_expires_in)
+        token = s.dumps({'name': self.name})
+        return unicode(token)
 
     @property
     def is_active(self):
@@ -44,6 +52,16 @@ class User(UserMixin):
             return None
         if bcrypt.checkpw(password, self.passhash):
             return True
+
+
+def unpack_session_token(token):
+    s = Serializer(app.config['SECRET_KEY'])
+    try:
+        payload = s.loads(token)
+    except BadData:
+        return False
+    else:
+        return user_from_name(payload.get('name'))
 
 
 alice = User('Alice', 1, passhash='$2b$12$6UcECs.N2rNgOJGMgK3L8O5woOSOEAyuxdCvblrVatJNRVPHTnsx6')  # diffie_rulz
@@ -59,8 +77,10 @@ def user_from_name(search_name):
 
 
 @login_manager.user_loader
-def load_user(user_id):
-    return USERS.get(user_id)
+def load_user(token):
+    '''takes session_token as input argument, which is an
+    itsdangerous signed TimedJSONWebSignatureToken.'''
+    return unpack_session_token(token)
 
 
 @app.route('/')

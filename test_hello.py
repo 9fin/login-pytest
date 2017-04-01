@@ -21,7 +21,8 @@ def client_auth():
 
 @pytest.fixture
 def user_fixture():
-    alice = hello_auth.User('Alice', 1, passhash='$2b$12$6UcECs.N2rNgOJGMgK3L8O5woOSOEAyuxdCvblrVatJNRVPHTnsx6')  # diffie_rulz
+    alice = hello_auth.User('Alice', 1,
+                            passhash='$2b$12$6UcECs.N2rNgOJGMgK3L8O5woOSOEAyuxdCvblrVatJNRVPHTnsx6')  # diffie_rulz
     USERS = {1: alice}
     return alice, USERS
 
@@ -43,7 +44,7 @@ class TestRoutes:
 class TestUserClass:
     def test_get_user_id(self, user_fixture):
         user, _ = user_fixture
-        assert user.get_id() == 1
+        assert isinstance(user.get_id(), unicode)
 
     def test_get_is_active(self, user_fixture):
         user, _ = user_fixture
@@ -70,11 +71,7 @@ class TestUserClass:
 class TestFlaskLogin:
     def test_get_user_by_name(self, user_fixture):
         user, _ = user_fixture
-        assert hello_auth.user_from_name('ALICE').id == user.id
-
-    def test_load_user(self, user_fixture):
-        user, user_dict = user_fixture
-        assert hello_auth.load_user(1).id == user.id
+        assert hello_auth.user_from_name('ALICE').name == user.name
 
 
 class TestLoginAuth:
