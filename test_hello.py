@@ -1,6 +1,7 @@
 import pytest
 import hello_auth
 from flask_login import current_user
+import sys
 
 
 @pytest.yield_fixture
@@ -46,7 +47,9 @@ class TestRoutes:
 class TestUserClass:
     def test_get_user_id(self, user_fixture):
         user, _ = user_fixture
-        assert isinstance(user.get_id(), str)
+        if (sys.version_info > (3, 0)):
+            assert isinstance(user.get_id(), str)
+        assert isinstance(user.get_id(), unicode)
 
     def test_get_is_active(self, user_fixture):
         user, _ = user_fixture
