@@ -1,3 +1,4 @@
+from __future__ import print_function
 from flask import Flask, render_template, redirect, url_for, request
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user
 from jinja2 import Template
@@ -9,19 +10,30 @@ login_manager.login_view = 'login'
 SECRET_KEY = 'not-the-actual-key-in-prod'
 
 
-def create_app(testing=False, debug=False, auth_disabled=True):
-    app = Flask(__name__)
-    app.config['SECRET_KEY'] = SECRET_KEY
-    app.config['TESTING'] = testing
-    app.config['DEBUG'] = debug
-    app.config['LOGIN_DISABLED'] = auth_disabled
-    login_manager.init_app(app)
-    if __name__ != "__main__":
-        from hello_auth import *
-    return app
+testing = False
+debug = False
+auth_disabled = False
+
+app = Flask(__name__)
+app.config['SECRET_KEY'] = SECRET_KEY
+app.config['TESTING'] = testing
+app.config['DEBUG'] = debug
+app.config['LOGIN_DISABLED'] = auth_disabled
+
+login_manager.init_app(app)
 
 
-app = create_app(auth_disabled=False)
+# Python 3 helpers
+def ensure_bytes(s):   # pragma: no cover
+    if type(s) == str:
+        return s.encode('utf-8')
+    return s
+
+
+def ensure_str(b):   # pragma: no cover
+    if type(b) == bytes:
+        return b.decode('utf-8')
+    return b
 
 
 class User(UserMixin):
@@ -39,7 +51,7 @@ class User(UserMixin):
         '''
         s = Serializer(app.config['SECRET_KEY'], expires_in=self.token_expires_in)
         token = s.dumps({'name': self.name})
-        return unicode(token)
+        return ensure_str(token)
 
     @property
     def is_active(self):
@@ -64,8 +76,8 @@ def unpack_session_token(token):
         return user_from_name(payload.get('name'))
 
 
-alice = User('Alice', 1, passhash='$2b$12$6UcECs.N2rNgOJGMgK3L8O5woOSOEAyuxdCvblrVatJNRVPHTnsx6')  # diffie_rulz
-bob = User('Bob', 2, passhash='$2b$12$UmgXcHWoxlIsrEoT54LMHeb82OVkkLzPzxVni5.GyaN17JmabRSXO')  # prng_nonce
+alice = User('Alice', 1, passhash=b'$2b$12$6UcECs.N2rNgOJGMgK3L8O5woOSOEAyuxdCvblrVatJNRVPHTnsx6')  # diffie_rulz
+bob = User('Bob', 2, passhash=b'$2b$12$UmgXcHWoxlIsrEoT54LMHeb82OVkkLzPzxVni5.GyaN17JmabRSXO')  # prng_nonce
 
 USERS = {1: alice, 2: bob}
 
@@ -90,7 +102,7 @@ def hello_world():
 
 @app.route('/unicorns-area-51-fight-club')
 @login_required
-def secrets():
+def secrets():   # pragma: no cover
     return render_template(Template("""<h1>First rule of coding tests, don't talk about coding tests.</h1><p><img src="https://cdn0.vox-cdn.com/uploads/chorus_image/image/49838227/silicon_20valley_20hbo_20tj_20miller_20unicorn.0.jpg" alt="unicorn" width="440" height="296" /></p>
     <p><img src="https://s-media-cache-ak0.pinimg.com/564x/62/16/1c/62161cb9adaf94679eb27e6ea0139c16.jpg" alt="area-51" width="440" height="440" /></p>
     <p><img src="http://vignette1.wikia.nocookie.net/villains/images/8/81/Tyler-durden.jpg/revision/latest?cb=20160109171255" alt="fight-club" width="400" height="579" /></p>
@@ -116,13 +128,13 @@ def login_post():
     name = request.form.get('name').lower() if request.form.get('name') else None
     user = user_from_name(name)
     if not user:
-        print 'failed auth: user not found - redirecting'
+        print('failed auth: user not found - redirecting')
         return redirect(url_for('hello_world'))
     if not password:
-        print 'failed auth: no password supplied - redirecting'
+        print('failed auth: no password supplied - redirecting')
         return redirect(url_for('hello_world'))
     if not user.check_pw(password):
-        print 'failed auth: incorrect password - redirecting'
+        print('failed auth: incorrect password - redirecting')
         return redirect(url_for('hello_world'))
     login_user(user)
     return redirect(url_for('secrets'))
@@ -131,7 +143,7 @@ def login_post():
 @app.route('/logout', methods=['GET'])
 @login_required
 def logout():
-    print 'logging out user'
+    print('logging out user')
     logout_user()
     return redirect(url_for('hello_world'))
 

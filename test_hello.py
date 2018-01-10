@@ -5,7 +5,8 @@ from flask_login import current_user
 
 @pytest.yield_fixture
 def client():
-    app = hello_auth.create_app()
+    app = hello_auth.app
+    app.config['LOGIN_DISABLED'] = True
     with app.app_context():
         with app.test_client() as c:
             yield c
@@ -13,7 +14,8 @@ def client():
 
 @pytest.yield_fixture
 def client_auth():
-    app = hello_auth.create_app(auth_disabled=False)
+    app = hello_auth.app
+    app.config['LOGIN_DISABLED'] = False
     with app.app_context():
         with app.test_client() as c:
             yield c
@@ -22,7 +24,7 @@ def client_auth():
 @pytest.fixture
 def user_fixture():
     alice = hello_auth.User('Alice', 1,
-                            passhash='$2b$12$6UcECs.N2rNgOJGMgK3L8O5woOSOEAyuxdCvblrVatJNRVPHTnsx6')  # diffie_rulz
+                            passhash=b'$2b$12$6UcECs.N2rNgOJGMgK3L8O5woOSOEAyuxdCvblrVatJNRVPHTnsx6')  # diffie_rulz
     USERS = {1: alice}
     return alice, USERS
 
@@ -38,13 +40,13 @@ class TestRoutes:
 
     def test_secrets(self, client):
         response = client.get('/unicorns-area-51-fight-club')
-        assert response.status_code == 200
+        assert response.status_code == 302
 
 
 class TestUserClass:
     def test_get_user_id(self, user_fixture):
         user, _ = user_fixture
-        assert isinstance(user.get_id(), unicode)
+        assert isinstance(user.get_id(), str)
 
     def test_get_is_active(self, user_fixture):
         user, _ = user_fixture
