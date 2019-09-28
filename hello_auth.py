@@ -1,4 +1,3 @@
-from __future__ import print_function
 from flask import Flask, render_template, redirect, url_for, request
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user
 from jinja2 import Template
@@ -20,19 +19,6 @@ app.config['DEBUG'] = debug
 app.config['LOGIN_DISABLED'] = auth_disabled
 
 login_manager.init_app(app)
-
-
-# Python 3 helpers
-def ensure_bytes(s):   # pragma: no cover
-    if type(s) == str:
-        return s.encode('utf-8')
-    return s
-
-
-def ensure_str(b):   # pragma: no cover
-    if type(b) == bytes:
-        return b.decode('utf-8')
-    return b
 
 
 class User(UserMixin):
@@ -126,7 +112,3 @@ def logout():
     print('logging out user')
     logout_user()
     return redirect(url_for('hello_world'))
-
-
-if __name__ == "__main__":  # pragma: no cover
-    app.run(port=8000, debug=True)
