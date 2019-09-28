@@ -47,10 +47,7 @@ class TestRoutes:
 class TestUserClass:
     def test_get_user_id(self, user_fixture):
         user, _ = user_fixture
-        if (sys.version_info > (3, 0)):
-            assert isinstance(user.get_id(), str) or isinstance(user.get_id(), int)
-        else:
-            assert isinstance(user.get_id(), unicode) or isinstance(user.get_id(), int)
+        assert isinstance(user.get_id(), str) or isinstance(user.get_id(), int)
 
     def test_get_is_active(self, user_fixture):
         user, _ = user_fixture
